@@ -5,6 +5,7 @@
 package frc.robot.subsystems.vision;
 
 import static edu.wpi.first.math.util.Units.degreesToRadians;
+import static edu.wpi.first.units.Units.Milliseconds;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -32,7 +33,7 @@ public class VisionIOLimelight implements VisionIO {
         new Rotation3d(
             degreesToRadians(pose[3]), degreesToRadians(pose[4]), degreesToRadians(pose[5]));
     inputs.estimatedPose = new Pose3d(pose[0], pose[1], pose[2], rotation);
-    inputs.timestamp = Util.now();
+    inputs.timestamp = Util.now().in(Milliseconds);
     inputs.latency = pose[6];
     inputs.tagCount = pose[7];
     inputs.inField = Util.inField(inputs.estimatedPose);

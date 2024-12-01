@@ -4,17 +4,18 @@
 
 package frc.robot.util;
 
+import static edu.wpi.first.units.Units.Microseconds;
 import static frc.robot.Constants.*;
 
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.util.WPIUtilJNI;
 
 public final class Util {
   private Util() {}
 
-  /** Time in milliseconds */
-  public static double now() {
-    return WPIUtilJNI.now() / 1000;
+  public static Time now() {
+    return Microseconds.of(WPIUtilJNI.now());
   }
 
   public static boolean inField(Pose3d pose) {

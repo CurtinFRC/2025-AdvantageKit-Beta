@@ -5,6 +5,7 @@
 package frc.robot.subsystems.shooter;
 
 import static edu.wpi.first.units.Units.RPM;
+import static edu.wpi.first.units.Units.Volts;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
@@ -49,7 +50,7 @@ public class Shooter extends SubsystemBase {
         () -> {
           Logger.recordOutput("Shooter/Desired Speed", speedRPM);
           var pid_output = pid.calculate(inputs.velocity, speedRPM);
-          var ff_output = ff.calculate(RPM.of(speedRPM)).magnitude(); // avoids deprecation warning
+          var ff_output = ff.calculate(RPM.of(speedRPM)).in(Volts); // avoids deprecation warning
           io.setVoltage(pid_output + ff_output);
         });
   }
