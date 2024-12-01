@@ -60,7 +60,7 @@ public class VisionIOSim implements VisionIO {
     inputs.camera = cameraName;
 
     var results = camera.getAllUnreadResults();
-    if (results.isEmpty()) {
+    if (!results.isEmpty()) {
       var result = results.get(results.size() - 1);
       if (result.getMultiTagResult().isPresent()) {
         inputs.estimatedPose =
