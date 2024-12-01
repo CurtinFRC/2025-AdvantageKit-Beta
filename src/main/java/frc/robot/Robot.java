@@ -28,6 +28,9 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveIO;
 import frc.robot.subsystems.drive.DriveIOCTRE;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterIO;
+import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOLimelight;
 import frc.robot.subsystems.vision.VisionIOSim;
@@ -54,6 +57,7 @@ public class Robot extends LoggedRobot {
   private final CommandXboxController driver = new CommandXboxController(0);
 
   private final Drive drive;
+  private final Shooter shooter;
   private final VisionSource limelight;
 
   private final SwerveRequest.FieldCentric driveReq =
@@ -109,6 +113,8 @@ public class Robot extends LoggedRobot {
                     TunerConstants.BackRight));
 
         limelight = new VisionSource(new VisionIOLimelight("limelight"));
+        shooter =
+            new Shooter(new ShooterIO() {}); // no op since we dont have a shooter on the real robot
         break;
 
       case SIM:
@@ -126,6 +132,7 @@ public class Robot extends LoggedRobot {
                     TunerConstants.BackRight));
 
         limelight = new VisionSource(new VisionIOSim("limelight") {});
+        shooter = new Shooter(new ShooterIOSim());
         break;
 
         // in replay
@@ -136,8 +143,10 @@ public class Robot extends LoggedRobot {
         Logger.setReplaySource(new WPILOGReader(logPath));
         Logger.addDataReceiver(new WPILOGWriter(LogFileUtil.addPathSuffix(logPath, "_sim")));
 
+        // inputs come from log file
         drive = new Drive(new DriveIO() {});
         limelight = new VisionSource(new VisionIO() {});
+        shooter = new Shooter(new ShooterIO() {});
         break;
     }
 
@@ -167,6 +176,7 @@ public class Robot extends LoggedRobot {
             drive
                 .moveToPosition(new Pose2d(15, 5, new Rotation2d(0)))
                 .until(drive::isTeleopAtSetpoint));
+    driver.b().whileTrue(shooter.maintain(500));
 
     // Run SysId routines when holding back/start and X/Y.
     // Note that each routine should be run exactly once in a single log.
