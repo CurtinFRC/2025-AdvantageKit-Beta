@@ -6,6 +6,5 @@
 *.traj text eol=lf
 *.chor text eol=lf
 src/main/java/frc/robot/generated/** linguist-generated
-src/main/java/frc/robot/BuildConstants.java linguist-generated
 *.traj linguist-generated
 *.chor linguist-generated

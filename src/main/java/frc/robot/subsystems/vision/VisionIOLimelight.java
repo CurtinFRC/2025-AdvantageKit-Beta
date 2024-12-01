@@ -12,7 +12,7 @@ import frc.robot.util.Util;
 public class VisionIOLimelight implements VisionIO {
   private final NetworkTable impl;
   private final DoubleArraySubscriber botpose;
-  double[] validIds = null;
+  double[] validIds;
   private final String camera;
 
   public VisionIOLimelight(String camera) {
@@ -41,6 +41,6 @@ public class VisionIOLimelight implements VisionIO {
   @Override
   public void setValidIds(double[] validIds) {
     impl.getDoubleArrayTopic("fiducial_id_filters_set").publish().set(validIds);
-    this.validIds = validIds;
+    this.validIds = validIds.clone();
   }
 }

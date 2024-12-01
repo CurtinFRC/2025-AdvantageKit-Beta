@@ -18,13 +18,13 @@ public interface DriveIO {
     public SwerveModuleState[] moduleTargetStates = new SwerveModuleState[4];
     public Pose2d pose = new Pose2d();
     public ChassisSpeeds speeds = new ChassisSpeeds();
-    public double odometryPeriodSeconds = 0.0;
-    public int successfulDaqs = 0;
-    public int failedDaqs = 0;
+    public double odometryPeriodSeconds;
+    public int successfulDaqs;
+    public int failedDaqs;
 
-    public double gyroRate = 0.0;
+    public double gyroRate;
     public Rotation3d rotation3d = new Rotation3d();
-    public boolean odometryIsValid = false;
+    public boolean odometryIsValid;
   }
 
   public default void updateInputs(DriveIOInputs inputs) {}

@@ -66,6 +66,7 @@ public class Drive extends SubsystemBase {
    * SysId routine for characterizing steer. This is used to find PID gains for
    * the steer motors.
    */
+  @SuppressWarnings("PMD.UnusedPrivateField")
   private final SysIdRoutine m_sysIdRoutineSteer =
       new SysIdRoutine(
           new SysIdRoutine.Config(
@@ -84,6 +85,7 @@ public class Drive extends SubsystemBase {
    * See the documentation of SwerveRequest.SysIdSwerveRotation for info on
    * importing the log to SysId.
    */
+  @SuppressWarnings("PMD.UnusedPrivateField")
   private final SysIdRoutine m_sysIdRoutineRotation =
       new SysIdRoutine(
           new SysIdRoutine.Config(

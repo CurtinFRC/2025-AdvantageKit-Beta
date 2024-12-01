@@ -4,8 +4,6 @@ import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
-import com.ctre.phoenix6.swerve.SwerveRequest;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 
@@ -13,9 +11,10 @@ import edu.wpi.first.wpilibj.RobotController;
  * Class that extends the Phoenix SwerveDrivetrain class and implements subsystem so it can be used
  * in command-based projects easily.
  */
+@SuppressWarnings("PMD.SingularField")
 public class DriveIOCTRE extends SwerveDrivetrain implements DriveIO {
   private static final double kSimLoopPeriod = 0.005; // 5 ms
-  private Notifier m_simNotifier = null;
+  private Notifier m_simNotifier;
   private double m_lastSimTime;
 
   public DriveIOCTRE(
@@ -53,16 +52,6 @@ public class DriveIOCTRE extends SwerveDrivetrain implements DriveIO {
     inputs.rotation3d = getRotation3d();
     inputs.gyroRate = getPigeon2().getAngularVelocityZWorld().getValueAsDouble();
     inputs.odometryIsValid = isOdometryValid();
-  }
-
-  @Override
-  public void resetPose(Pose2d pose) {
-    super.resetPose(pose);
-  }
-
-  @Override
-  public void setControl(SwerveRequest request) {
-    super.setControl(request);
   }
 
   private void startSimThread() {

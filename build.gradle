@@ -101,8 +101,8 @@ dependencies {
 // Create version file
 project.compileJava.dependsOn(createVersionFile)
 gversion {
-    srcDir       = "src/main/java/"
-    classPackage = "frc.robot"
+    srcDir       = "src/main/java/generated/"
+    classPackage = "frc.robot.generated"
     className    = "BuildConstants"
     dateFormat   = "yyyy-MM-dd HH:mm:ss z"
     timeZone     = "Australia/Perth"
@@ -152,7 +152,7 @@ spotless {
     java {
         target fileTree('.') {
             include '**/*.java'
-            exclude '**/build/**', '**/build-*/**'
+            exclude '**/build/**', '**/build-*/**', 'src/main/java/generated/**'
         }
         toggleOffOn()
         googleJavaFormat()
@@ -189,4 +189,15 @@ spotless {
         indentWithSpaces(2)
         endWithNewline()
     }
+}
+
+apply plugin: "pmd"
+
+pmd {
+    toolVersion = "7.3.0"
+    consoleOutput = true
+    sourceSets = [project.sourceSets["main"]]
+    reportsDir = file("${project.buildDir}/reports/pmd")
+    ruleSetFiles = files(file("$rootDir/pmd-ruleset.xml"))
+    ruleSets = []
 }
