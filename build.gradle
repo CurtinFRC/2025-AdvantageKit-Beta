@@ -101,7 +101,7 @@ dependencies {
 // Create version file
 project.compileJava.dependsOn(createVersionFile)
 gversion {
-    srcDir       = "src/main/java/generated/"
+    srcDir       = "src/main/java/"
     classPackage = "frc.robot.generated"
     className    = "BuildConstants"
     dateFormat   = "yyyy-MM-dd HH:mm:ss z"
@@ -152,7 +152,7 @@ spotless {
     java {
         target fileTree('.') {
             include '**/*.java'
-            exclude '**/build/**', '**/build-*/**', 'src/main/java/generated/**'
+            exclude '**/build/**', '**/build-*/**', 'src/main/java/**/generated/**'
         }
         toggleOffOn()
         googleJavaFormat()
