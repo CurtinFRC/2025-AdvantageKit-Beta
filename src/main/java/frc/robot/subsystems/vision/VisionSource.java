@@ -1,0 +1,57 @@
+package frc.robot.subsystems.vision;
+
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.littletonrobotics.junction.Logger;
+
+public class VisionSource extends SubsystemBase
+/** this isnt a subsystem but we need the periodic */
+{
+  private final VisionIO io;
+  private final VisionIOInputsAutoLogged inputs = new VisionIOInputsAutoLogged();
+
+  public VisionSource(VisionIO io) {
+    this.io = io;
+  }
+
+  @Override
+  public void periodic() {
+    io.updateInputs(inputs);
+    Logger.processInputs("VisionSource/" + inputs.camera, inputs);
+  }
+
+  public Pose3d getPose() {
+    return inputs.estimatedPose;
+  }
+
+  public boolean inField() {
+    return inputs.inField;
+  }
+
+  /** Latency compensated timestamp */
+  public double getTimestamp() {
+    return inputs.timestamp - inputs.latency;
+  }
+
+  // TODO account for gyro rotational rate, tag area, tag distance
+  public Matrix<N3, N1> getStdDevs() {
+    if (inputs.tagCount <= 0) {
+      return VecBuilder.fill(9999999, 9999999, 9999999);
+    }
+    return VecBuilder.fill(0.7, 0.7, 9999999);
+  }
+
+  /** for sim */
+  public void setPose(Pose3d pose) {
+    if (!RobotBase.isSimulation()) {
+      throw new RuntimeException("Can't set vision pose out of sim");
+    }
+    io.setPose(pose);
+    inputs.estimatedPose = pose;
+  }
+}

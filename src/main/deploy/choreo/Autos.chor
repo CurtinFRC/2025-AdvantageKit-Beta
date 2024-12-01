@@ -1,0 +1,74 @@
+{
+ "name":"Autos",
+ "version":"v2025.0.0",
+ "type":"Swerve",
+ "variables":{
+  "expressions":{},
+  "poses":{}
+ },
+ "config":{
+  "frontLeft":{
+   "x":{
+    "exp":"10.2 m",
+    "val":10.2
+   },
+   "y":{
+    "exp":"9.25 in",
+    "val":0.23495
+   }
+  },
+  "backLeft":{
+   "x":{
+    "exp":"-10.2 m",
+    "val":-10.2
+   },
+   "y":{
+    "exp":"9.25 m",
+    "val":9.25
+   }
+  },
+  "mass":{
+   "exp":"35 kg",
+   "val":35.0
+  },
+  "inertia":{
+   "exp":"2.018009565 kg m ^ 2",
+   "val":2.018009565
+  },
+  "gearing":{
+   "exp":"6.5",
+   "val":6.5
+  },
+  "radius":{
+   "exp":"1.8 in",
+   "val":0.04572
+  },
+  "vmax":{
+   "exp":"502.65482457436696 rad / s",
+   "val":502.65482457436696
+  },
+  "tmax":{
+   "exp":"1.162295081967213 N m",
+   "val":1.162295081967213
+  },
+  "bumper":{
+   "front":{
+    "exp":"39 cm",
+    "val":0.39
+   },
+   "side":{
+    "exp":"40.5 cm",
+    "val":0.405
+   },
+   "back":{
+    "exp":"39 cm",
+    "val":0.39
+   }
+  },
+  "differentialTrackWidth":{
+   "exp":"22 in",
+   "val":0.5588
+  }
+ },
+ "generationFeatures":[]
+}
