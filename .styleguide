@@ -15,4 +15,5 @@ modifiableFileExclude {
    compile_commands.json
    gradlew
    gradlew.bat
+   src/main/java/frc/robot/generated
 }
