@@ -23,7 +23,6 @@ import edu.wpi.first.net.PortForwarder;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -33,20 +32,16 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveIO;
 import frc.robot.subsystems.drive.DriveIOCTRE;
-import frc.robot.subsystems.shooter.Shooter;
-import frc.robot.subsystems.shooter.ShooterIO;
-import frc.robot.subsystems.shooter.ShooterIOSim;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOLimelight;
 import frc.robot.subsystems.vision.VisionIOSim;
 import frc.robot.subsystems.vision.VisionSource;
+import frc.robot.util.AutoChooser;
 import java.io.File;
 import java.util.Set;
-import java.util.function.Supplier;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
-import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
@@ -62,7 +57,6 @@ public class Robot extends LoggedRobot {
   private final CommandXboxController driver = new CommandXboxController(0);
 
   private final Drive drive;
-  private final Shooter shooter;
   private final VisionSource limelight_back;
   private final VisionSource limelight_front;
 
@@ -71,8 +65,7 @@ public class Robot extends LoggedRobot {
           .withDriveRequestType(
               DriveRequestType.Velocity); // Use closed-loop control for drive motors
 
-  private final LoggedDashboardChooser<Supplier<Command>> autoChooser =
-      new LoggedDashboardChooser<>("Autos");
+  private final AutoChooser autoChooser;
   private final AutoFactory autoFactory;
 
   public Robot() {
@@ -120,8 +113,6 @@ public class Robot extends LoggedRobot {
 
         limelight_back = new VisionSource(new VisionIOLimelight("limelight-back"));
         limelight_front = new VisionSource(new VisionIOLimelight("limelight-front"));
-        shooter =
-            new Shooter(new ShooterIO() {}); // no op since we dont have a shooter on the real robot
         break;
 
       case SIM:
@@ -140,7 +131,6 @@ public class Robot extends LoggedRobot {
 
         limelight_back = new VisionSource(new VisionIOSim("limelight-back"));
         limelight_front = new VisionSource(new VisionIOSim("limelight-front"));
-        shooter = new Shooter(new ShooterIOSim());
         break;
 
         // in replay
@@ -155,7 +145,6 @@ public class Robot extends LoggedRobot {
         drive = new Drive(new DriveIO() {});
         limelight_back = new VisionSource(new VisionIO() {});
         limelight_front = new VisionSource(new VisionIO() {});
-        shooter = new Shooter(new ShooterIO() {});
         break;
     }
 
@@ -206,7 +195,6 @@ public class Robot extends LoggedRobot {
             drive
                 .moveToPosition(new Pose2d(2, 5.6, new Rotation2d()))
                 .until(drive::isTeleopAtSetpoint));
-    driver.b().whileTrue(shooter.maintain(500));
 
     // Run SysId routines when holding back/start and X/Y.
     // Note that each routine should be run exactly once in a single log.
@@ -223,11 +211,13 @@ public class Robot extends LoggedRobot {
             () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
             new AutoFactory.AutoBindings());
 
+    autoChooser = new AutoChooser(autoFactory, "AutoChooser");
+
     autoChooser.addOption(
         "Simple Path",
-        () -> {
-          final AutoLoop routine = autoFactory.newLoop("simple");
-          final AutoTrajectory path = autoFactory.trajectory("SimplePath", routine);
+        (factory) -> {
+          final AutoLoop routine = factory.newLoop("simple");
+          final AutoTrajectory path = factory.trajectory("SimplePath", routine);
 
           routine
               .enabled()
@@ -244,9 +234,9 @@ public class Robot extends LoggedRobot {
 
     autoChooser.addOption(
         "Bad Idea TM",
-        () -> {
-          final AutoLoop routine = autoFactory.newLoop("jadesadumbass");
-          final AutoTrajectory path = autoFactory.trajectory("VeryBadIdeaTm", routine);
+        (factory) -> {
+          final AutoLoop routine = factory.newLoop("jadesadumbass");
+          final AutoTrajectory path = factory.trajectory("VeryBadIdeaTm", routine);
 
           routine
               .enabled()
@@ -263,9 +253,9 @@ public class Robot extends LoggedRobot {
 
     autoChooser.addOption(
         "Move To Side",
-        () -> {
-          final AutoLoop routine = autoFactory.newLoop("side");
-          final AutoTrajectory path = autoFactory.trajectory("MoveToSide", routine);
+        (factory) -> {
+          final AutoLoop routine = factory.newLoop("side");
+          final AutoTrajectory path = factory.trajectory("MoveToSide", routine);
 
           routine
               .enabled()
@@ -282,9 +272,9 @@ public class Robot extends LoggedRobot {
 
     autoChooser.addOption(
         "Test Path",
-        () -> {
-          final AutoLoop routine = autoFactory.newLoop("test");
-          final AutoTrajectory path = autoFactory.trajectory("TestPath", routine);
+        (factory) -> {
+          final AutoLoop routine = factory.newLoop("test");
+          final AutoTrajectory path = factory.trajectory("TestPath", routine);
 
           routine
               .enabled()
@@ -299,19 +289,20 @@ public class Robot extends LoggedRobot {
           return routine.cmd();
         });
 
-    autoChooser.addDefaultOption(
+    autoChooser.addOption(
         "Set Pose to Vision Pose",
-        () -> {
+        (factory) -> {
           return Commands.runOnce(
               () -> drive.resetPose(limelight_back.getPose().toPose2d()), drive);
         });
 
-    autonomous().whileTrue(Commands.defer(() -> autoChooser.get().get().asProxy(), Set.of()));
+    autonomous().whileTrue(Commands.defer(() -> autoChooser.getSelected().asProxy(), Set.of()));
   }
 
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+    autoChooser.periodic();
 
     if (limelight_back.inField()) {
       drive.addVisionMeasurement(

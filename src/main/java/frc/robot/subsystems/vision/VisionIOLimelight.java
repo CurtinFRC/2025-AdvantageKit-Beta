@@ -30,21 +30,22 @@ public class VisionIOLimelight implements VisionIO {
 
   @Override
   public void updateInputs(VisionIOInputs inputs) {
+    inputs.camera = camera;
+    inputs.cameraOffset = cameraOffset;
+    inputs.timestamp = Util.now().in(Milliseconds);
+    inputs.validIds = validIds;
+
     var pose = botpose.get();
     if (pose != null && pose.length != 0) {
       var rotation =
           new Rotation3d(
               degreesToRadians(pose[3]), degreesToRadians(pose[4]), degreesToRadians(pose[5]));
       inputs.estimatedPose = new Pose3d(pose[0], pose[1], pose[2], rotation);
-      inputs.timestamp = Util.now().in(Milliseconds);
       inputs.latency = pose[6];
       inputs.tagCount = pose[7];
       inputs.inField = Util.inField(inputs.estimatedPose);
-      inputs.camera = camera;
-      inputs.validIds = validIds;
       inputs.averageTagDistance = pose[9];
       inputs.averageTagArea = pose[10];
-      inputs.cameraOffset = cameraOffset;
     }
   }
 

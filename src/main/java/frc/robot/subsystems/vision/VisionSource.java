@@ -57,7 +57,7 @@ public class VisionSource extends SubsystemBase
     if (inputs.tagCount <= 0) {
       return VecBuilder.fill(9999999, 9999999, 9999999);
     }
-    return VecBuilder.fill(0.7, 0.7, 9999999);
+    return VecBuilder.fill(0.15, 0.15, 9999999);
   }
 
   public void setCameraOffset(Transform3d translation) {
