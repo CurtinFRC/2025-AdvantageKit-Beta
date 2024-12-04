@@ -185,8 +185,8 @@ public class Robot extends LoggedRobot {
         drive.applyRequest(
             () ->
                 driveReq
-                    .withVelocityX(-driver.getLeftY() * MaxSpeed)
-                    .withVelocityY(-driver.getLeftX() * MaxSpeed)
+                    .withVelocityX(-driver.getLeftY() * MaxSpeed) // controller x is wpilib y
+                    .withVelocityY(-driver.getLeftX() * MaxSpeed) // controller y is wpilib x
                     .withRotationalRate(
                         driver.getRightX()
                             * MaxAngularRate) // Drive counterclockwise with negative X (left)
@@ -266,6 +266,25 @@ public class Robot extends LoggedRobot {
         () -> {
           final AutoLoop routine = autoFactory.newLoop("side");
           final AutoTrajectory path = autoFactory.trajectory("MoveToSide", routine);
+
+          routine
+              .enabled()
+              .onTrue(
+                  drive
+                      .runOnce(
+                          () ->
+                              path.getInitialPose()
+                                  .ifPresentOrElse(pose -> drive.resetPose(pose), routine::kill))
+                      .andThen(path.cmd()));
+
+          return routine.cmd();
+        });
+
+    autoChooser.addOption(
+        "Test Path",
+        () -> {
+          final AutoLoop routine = autoFactory.newLoop("test");
+          final AutoTrajectory path = autoFactory.trajectory("TestPath", routine);
 
           routine
               .enabled()

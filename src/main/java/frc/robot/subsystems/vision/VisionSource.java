@@ -32,6 +32,10 @@ public class VisionSource extends SubsystemBase
 
   /** Pose with camera offset accounted for */
   public Pose3d getPose() {
+    if (inputs.estimatedPose == null) {
+      return new Pose3d();
+    }
+
     if (inputs.cameraOffset != null) {
       return inputs.estimatedPose.plus(inputs.cameraOffset);
     } else {
