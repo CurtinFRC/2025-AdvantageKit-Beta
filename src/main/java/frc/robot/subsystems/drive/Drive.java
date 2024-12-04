@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.littletonrobotics.junction.Logger;
 
@@ -35,12 +36,9 @@ public class Drive extends SubsystemBase {
 
   private final PIDController m_teleopXController = new PIDController(10, 0, 0.1);
   private final PIDController m_teleopYController = new PIDController(10, 0, 0.1);
-  private final PIDController m_teleopThetaController = new PIDController(7, 0, 0.1);
 
   public boolean isTeleopAtSetpoint() {
-    return m_teleopXController.atSetpoint()
-        && m_teleopYController.atSetpoint()
-        && m_teleopThetaController.atSetpoint();
+    return m_teleopXController.atSetpoint() && m_teleopYController.atSetpoint();
   }
 
   /* Swerve requests to apply during SysId characterization */
@@ -178,7 +176,8 @@ public class Drive extends SubsystemBase {
 
     m_pathThetaController.enableContinuousInput(-Math.PI, Math.PI);
 
-    var targetSpeeds = reference.getChassisSpeeds();
+    // invert these cause drivebase is inverted
+    var targetSpeeds = reference.getChassisSpeeds().unaryMinus();
     targetSpeeds.vxMetersPerSecond += m_pathXController.calculate(pose.getX(), reference.x);
     targetSpeeds.vyMetersPerSecond += m_pathYController.calculate(pose.getY(), reference.y);
     targetSpeeds.omegaRadiansPerSecond +=
@@ -215,25 +214,45 @@ public class Drive extends SubsystemBase {
 
   public Command moveToPosition(Pose2d position) {
     var translationTolerance = 0.01;
-    var rotationTolerance = 0.015;
     m_teleopXController.setTolerance(translationTolerance);
     m_teleopYController.setTolerance(translationTolerance);
-    m_teleopThetaController.setTolerance(rotationTolerance);
 
     return run(
         () -> {
           Logger.recordOutput("Drive/Reference Pose", position);
+          Logger.recordOutput("Drive/Angle Plus 180", position.getRotation().plus(Rotation2d.kPi));
+
           var pose = state.Pose;
           var x = m_teleopXController.calculate(pose.getX(), position.getX());
           var y = m_teleopYController.calculate(pose.getY(), position.getY());
-          var theta =
-              m_teleopThetaController.calculate(
-                  pose.getRotation().getRadians(), position.getRotation().getRadians());
+          var req = new SwerveRequest.FieldCentricFacingAngle();
+          req.HeadingController.setP(7);
+          req.HeadingController.setD(0.1);
           setControl(
-              new SwerveRequest.FieldCentric()
-                  .withVelocityX(-x)
-                  .withVelocityY(-y)
-                  .withRotationalRate(theta));
+              req.withVelocityX(-x).withVelocityY(-y).withTargetDirection(position.getRotation()));
+        });
+  }
+
+  public Command driverAssistance(Pose2d position, DoubleSupplier x, DoubleSupplier y) {
+    var translationTolerance = 0.01;
+    m_teleopXController.setTolerance(translationTolerance);
+    m_teleopYController.setTolerance(translationTolerance);
+
+    return run(
+        () -> {
+          Logger.recordOutput("Drive/Reference Pose", position);
+          Logger.recordOutput("Drive/Angle Plus 180", position.getRotation().plus(Rotation2d.kPi));
+
+          var pose = state.Pose;
+          var _x = m_teleopXController.calculate(pose.getX(), position.getX());
+          var _y = m_teleopYController.calculate(pose.getY(), position.getY());
+          var req = new SwerveRequest.FieldCentricFacingAngle();
+          req.HeadingController.setP(7);
+          req.HeadingController.setD(0.1);
+          setControl(
+              req.withVelocityX(-_x / 2 - x.getAsDouble())
+                  .withVelocityY(-_y / 2 - y.getAsDouble())
+                  .withTargetDirection(position.getRotation()));
         });
   }
 

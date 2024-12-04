@@ -17,6 +17,10 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.net.PortForwarder;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -59,7 +63,8 @@ public class Robot extends LoggedRobot {
 
   private final Drive drive;
   private final Shooter shooter;
-  private final VisionSource limelight;
+  private final VisionSource limelight_back;
+  private final VisionSource limelight_front;
 
   private final SwerveRequest.FieldCentric driveReq =
       new SwerveRequest.FieldCentric()
@@ -113,7 +118,8 @@ public class Robot extends LoggedRobot {
                     TunerConstants.BackLeft,
                     TunerConstants.BackRight));
 
-        limelight = new VisionSource(new VisionIOLimelight("limelight"));
+        limelight_back = new VisionSource(new VisionIOLimelight("limelight-back"));
+        limelight_front = new VisionSource(new VisionIOLimelight("limelight-front"));
         shooter =
             new Shooter(new ShooterIO() {}); // no op since we dont have a shooter on the real robot
         break;
@@ -132,7 +138,8 @@ public class Robot extends LoggedRobot {
                     TunerConstants.BackLeft,
                     TunerConstants.BackRight));
 
-        limelight = new VisionSource(new VisionIOSim("limelight") {});
+        limelight_back = new VisionSource(new VisionIOSim("limelight-back"));
+        limelight_front = new VisionSource(new VisionIOSim("limelight-front"));
         shooter = new Shooter(new ShooterIOSim());
         break;
 
@@ -146,7 +153,8 @@ public class Robot extends LoggedRobot {
 
         // inputs come from log file
         drive = new Drive(new DriveIO() {});
-        limelight = new VisionSource(new VisionIO() {});
+        limelight_back = new VisionSource(new VisionIO() {});
+        limelight_front = new VisionSource(new VisionIO() {});
         shooter = new Shooter(new ShooterIO() {});
         break;
     }
@@ -155,27 +163,48 @@ public class Robot extends LoggedRobot {
     Logger.registerURCL(URCL.startExternal());
     Logger.start();
 
+    // TODO remove me and use LL LED abstraction
+    NetworkTableInstance.getDefault().getTable("limelight-front").getEntry("ledMode").setNumber(1);
+
+    // Make sure you only configure port forwarding once in your robot code.
+    // Do not place these function calls in any periodic functions
+    for (int port = 5800; port <= 5809; port++) {
+      PortForwarder.add(port, "limelight-back.local", port);
+      PortForwarder.add(port + 10, "limelight-front.local", port);
+    }
+
+    limelight_back.setCameraOffset(
+        new Transform3d(
+            Millimeters.of(320).unaryMinus(),
+            Millimeters.of(200).unaryMinus(),
+            Millimeters.of(0),
+            Rotation3d.kZero)); // we only care about 2d translation data
+
     drive.setDefaultCommand(
         // Drivetrain will execute this command periodically
         drive.applyRequest(
             () ->
                 driveReq
-                    // switched to account for Jades skill issue
-                    .withVelocityX(
-                        -driver.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(
-                        -driver.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                    .withVelocityX(-driver.getLeftY() * MaxSpeed)
+                    .withVelocityY(-driver.getLeftX() * MaxSpeed)
                     .withRotationalRate(
-                        -driver.getRightX()
+                        driver.getRightX()
                             * MaxAngularRate) // Drive counterclockwise with negative X (left)
             ));
+    driver
+        .leftBumper()
+        .whileTrue(
+            drive.driverAssistance(
+                new Pose2d(2, 5.6, new Rotation2d()),
+                () -> -driver.getLeftY() * MaxSpeed,
+                () -> -driver.getLeftX() * MaxSpeed));
     driver.a().whileTrue(drive.brake());
     driver.y().onTrue(drive.seedFieldCentric());
     driver
         .x()
         .whileTrue(
             drive
-                .moveToPosition(new Pose2d(15, 5, new Rotation2d(0)))
+                .moveToPosition(new Pose2d(2, 5.6, new Rotation2d()))
                 .until(drive::isTeleopAtSetpoint));
     driver.b().whileTrue(shooter.maintain(500));
 
@@ -213,6 +242,51 @@ public class Robot extends LoggedRobot {
           return routine.cmd();
         });
 
+    autoChooser.addOption(
+        "Bad Idea TM",
+        () -> {
+          final AutoLoop routine = autoFactory.newLoop("jadesadumbass");
+          final AutoTrajectory path = autoFactory.trajectory("VeryBadIdeaTm", routine);
+
+          routine
+              .enabled()
+              .onTrue(
+                  drive
+                      .runOnce(
+                          () ->
+                              path.getInitialPose()
+                                  .ifPresentOrElse(pose -> drive.resetPose(pose), routine::kill))
+                      .andThen(path.cmd()));
+
+          return routine.cmd();
+        });
+
+    autoChooser.addOption(
+        "Move To Side",
+        () -> {
+          final AutoLoop routine = autoFactory.newLoop("side");
+          final AutoTrajectory path = autoFactory.trajectory("MoveToSide", routine);
+
+          routine
+              .enabled()
+              .onTrue(
+                  drive
+                      .runOnce(
+                          () ->
+                              path.getInitialPose()
+                                  .ifPresentOrElse(pose -> drive.resetPose(pose), routine::kill))
+                      .andThen(path.cmd()));
+
+          return routine.cmd();
+        });
+
+    autoChooser.addDefaultOption(
+        "Set Pose to Vision Pose",
+        () -> {
+          return Commands.runOnce(
+              () -> drive.resetPose(limelight_back.getPose().toPose2d()), drive);
+        });
+
     autonomous().whileTrue(Commands.defer(() -> autoChooser.get().get().asProxy(), Set.of()));
   }
 
@@ -220,9 +294,18 @@ public class Robot extends LoggedRobot {
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
 
-    if (limelight.inField()) {
+    if (limelight_back.inField()) {
       drive.addVisionMeasurement(
-          limelight.getPose().toPose2d(), limelight.getTimestamp(), limelight.getStdDevs());
+          limelight_back.getPose().toPose2d(),
+          limelight_back.getTimestamp(),
+          limelight_back.getStdDevs());
+    }
+
+    if (limelight_front.inField()) {
+      drive.addVisionMeasurement(
+          limelight_front.getPose().toPose2d(),
+          limelight_front.getTimestamp(),
+          limelight_front.getStdDevs());
     }
   }
 
@@ -233,6 +316,6 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void simulationPeriodic() {
-    limelight.setPose(new Pose3d(drive.getState().Pose));
+    limelight_back.setPose(new Pose3d(drive.getState().Pose));
   }
 }

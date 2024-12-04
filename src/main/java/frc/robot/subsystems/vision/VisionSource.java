@@ -7,6 +7,7 @@ package frc.robot.subsystems.vision;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -29,8 +30,13 @@ public class VisionSource extends SubsystemBase
     Logger.processInputs("VisionSource/" + inputs.camera, inputs);
   }
 
+  /** Pose with camera offset accounted for */
   public Pose3d getPose() {
-    return inputs.estimatedPose;
+    if (inputs.cameraOffset != null) {
+      return inputs.estimatedPose.plus(inputs.cameraOffset);
+    } else {
+      return inputs.estimatedPose;
+    }
   }
 
   public boolean inField() {
@@ -48,6 +54,10 @@ public class VisionSource extends SubsystemBase
       return VecBuilder.fill(9999999, 9999999, 9999999);
     }
     return VecBuilder.fill(0.7, 0.7, 9999999);
+  }
+
+  public void setCameraOffset(Transform3d translation) {
+    io.setCameraOffset(translation);
   }
 
   /** for sim */

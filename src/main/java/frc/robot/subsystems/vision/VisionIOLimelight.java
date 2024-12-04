@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.Milliseconds;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.networktables.DoubleArraySubscriber;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -19,6 +20,7 @@ public class VisionIOLimelight implements VisionIO {
   private final DoubleArraySubscriber botpose;
   double[] validIds;
   private final String camera;
+  Transform3d cameraOffset;
 
   public VisionIOLimelight(String camera) {
     this.camera = camera;
@@ -41,11 +43,17 @@ public class VisionIOLimelight implements VisionIO {
     inputs.validIds = validIds;
     inputs.averageTagDistance = pose[9];
     inputs.averageTagArea = pose[10];
+    inputs.cameraOffset = cameraOffset;
   }
 
   @Override
   public void setValidIds(double[] validIds) {
     impl.getDoubleArrayTopic("fiducial_id_filters_set").publish().set(validIds);
     this.validIds = validIds.clone();
+  }
+
+  @Override
+  public void setCameraOffset(Transform3d translation) {
+    cameraOffset = translation;
   }
 }

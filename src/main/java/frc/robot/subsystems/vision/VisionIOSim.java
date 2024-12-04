@@ -16,6 +16,7 @@ import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
 
 // TODO make me closer to reality
+// TODO Camera offsets
 public class VisionIOSim implements VisionIO {
   private final String cameraName;
   private final PhotonCamera camera;
