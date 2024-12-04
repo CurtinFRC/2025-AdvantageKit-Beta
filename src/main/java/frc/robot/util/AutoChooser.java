@@ -1,3 +1,7 @@
+// Copyright (c) 2024 CurtinFRC
+// Open Source Software, you can modify it according to the terms
+// of the MIT License at the root of this project
+
 package frc.robot.util;
 
 import choreo.auto.AutoFactory;
@@ -75,7 +79,10 @@ public class AutoChooser implements LoggedDashboardInput {
   public AutoChooser(AutoFactory factory, String tableName) {
     this.factory = factory;
 
-    path = NetworkTable.normalizeKey(tableName, true) + "/AutoChooser";
+    path =
+        !tableName.equals("")
+            ? NetworkTable.normalizeKey(tableName, true) + "/AutoChooser"
+            : tableName + "/AutoChooser";
     NetworkTable table = NetworkTableInstance.getDefault().getTable(path);
 
     selected = table.getStringTopic("selected").getEntry(NONE_NAME);

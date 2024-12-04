@@ -229,7 +229,7 @@ public class Drive extends SubsystemBase {
           req.HeadingController.setP(7);
           req.HeadingController.setD(0.1);
           setControl(
-              req.withVelocityX(-x).withVelocityY(-y).withTargetDirection(position.getRotation()));
+              req.withVelocityX(x).withVelocityY(y).withTargetDirection(position.getRotation()));
         });
   }
 
@@ -250,8 +250,8 @@ public class Drive extends SubsystemBase {
           req.HeadingController.setP(7);
           req.HeadingController.setD(0.1);
           setControl(
-              req.withVelocityX(-_x / 2 - x.getAsDouble())
-                  .withVelocityY(-_y / 2 - y.getAsDouble())
+              req.withVelocityX(_x / 2 + x.getAsDouble())
+                  .withVelocityY(_y / 2 + y.getAsDouble())
                   .withTargetDirection(position.getRotation()));
         });
   }

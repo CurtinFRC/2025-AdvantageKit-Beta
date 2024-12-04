@@ -211,7 +211,7 @@ public class Robot extends LoggedRobot {
             () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
             new AutoFactory.AutoBindings());
 
-    autoChooser = new AutoChooser(autoFactory, "AutoChooser");
+    autoChooser = new AutoChooser(autoFactory, "");
 
     autoChooser.addOption(
         "Simple Path",
@@ -293,7 +293,7 @@ public class Robot extends LoggedRobot {
         "Set Pose to Vision Pose",
         (factory) -> {
           return Commands.runOnce(
-              () -> drive.resetPose(limelight_back.getPose().toPose2d()), drive);
+              () -> drive.resetPose(new Pose2d(1.3, 5.5, new Rotation2d())), drive);
         });
 
     autonomous().whileTrue(Commands.defer(() -> autoChooser.getSelected().asProxy(), Set.of()));
