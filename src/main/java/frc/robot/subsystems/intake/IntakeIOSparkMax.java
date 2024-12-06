@@ -1,20 +1,16 @@
-// Copyright (c) 2024 CurtinFRC
-// Open Source Software, you can modify it according to the terms
-// of the MIT License at the root of this project
-
-package frc.robot.subsystems.shooter;
+package frc.robot.subsystems.intake;
 
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import edu.wpi.first.wpilibj.RobotController;
 
-public class ShooterIOSparkMax implements ShooterIO {
-  private static final int PORT = 31;
+public class IntakeIOSparkMax implements IntakeIO {
+  private static final int PORT = 32;
 
   SparkMax spark = new SparkMax(PORT, MotorType.kBrushless);
 
   @Override
-  public void updateInputs(ShooterIOInputs inputs) {
+  public void updateInputs(IntakeIOInputs inputs) {
     inputs.appliedVolts = spark.getAppliedOutput() * RobotController.getBatteryVoltage();
     inputs.currentAmps = spark.getOutputCurrent();
     inputs.position = spark.getEncoder().getPosition();

@@ -14,11 +14,11 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
 public class Shooter extends SubsystemBase {
-  private static final double P = 0.1;
+  private static final double P = 0.00035273;
   private static final double D = 0;
-  private static final double S = 0;
-  private static final double V = 0;
-  private static final double A = 0;
+  private static final double S = 0.090624;
+  private static final double V = 0.0021896;
+  private static final double A = 0.00070176;
 
   private final ShooterIO io;
   private final ShooterIOInputsAutoLogged inputs;

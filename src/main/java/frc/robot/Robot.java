@@ -32,6 +32,16 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.DriveIO;
 import frc.robot.subsystems.drive.DriveIOCTRE;
+import frc.robot.subsystems.index.Index;
+import frc.robot.subsystems.index.IndexIO;
+import frc.robot.subsystems.index.IndexIOSparkMax;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.IntakeIO;
+import frc.robot.subsystems.intake.IntakeIOSparkMax;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterIO;
+import frc.robot.subsystems.shooter.ShooterIOSim;
+import frc.robot.subsystems.shooter.ShooterIOSparkMax;
 import frc.robot.subsystems.vision.VisionIO;
 import frc.robot.subsystems.vision.VisionIOLimelight;
 import frc.robot.subsystems.vision.VisionIOSim;
@@ -57,6 +67,10 @@ public class Robot extends LoggedRobot {
   private final CommandXboxController driver = new CommandXboxController(0);
 
   private final Drive drive;
+  private final Shooter m_shooter;
+  private final Intake m_intake;
+  private final Index m_index;
+  private final Superstructure superstructure;
   private final VisionSource limelight_back;
   private final VisionSource limelight_front;
 
@@ -111,6 +125,10 @@ public class Robot extends LoggedRobot {
                     TunerConstants.BackLeft,
                     TunerConstants.BackRight));
 
+        m_shooter = new Shooter(new ShooterIOSparkMax());
+        m_index = new Index(new IndexIOSparkMax());
+        m_intake = new Intake(new IntakeIOSparkMax());
+
         limelight_back = new VisionSource(new VisionIOLimelight("limelight-back"));
         limelight_front = new VisionSource(new VisionIOLimelight("limelight-front"));
         break;
@@ -129,6 +147,10 @@ public class Robot extends LoggedRobot {
                     TunerConstants.BackLeft,
                     TunerConstants.BackRight));
 
+        m_shooter = new Shooter(new ShooterIOSim());
+        m_index = new Index(new IndexIO() {});
+        m_intake = new Intake(new IntakeIO() {});
+
         limelight_back = new VisionSource(new VisionIOSim("limelight-back"));
         limelight_front = new VisionSource(new VisionIOSim("limelight-front"));
         break;
@@ -143,6 +165,9 @@ public class Robot extends LoggedRobot {
 
         // inputs come from log file
         drive = new Drive(new DriveIO() {});
+        m_shooter = new Shooter(new ShooterIO() {});
+        m_index = new Index(new IndexIO() {});
+        m_intake = new Intake(new IntakeIO() {});
         limelight_back = new VisionSource(new VisionIO() {});
         limelight_front = new VisionSource(new VisionIO() {});
         break;
@@ -151,6 +176,8 @@ public class Robot extends LoggedRobot {
     // Start AdvantageKit logger
     Logger.registerURCL(URCL.startExternal());
     Logger.start();
+
+    superstructure = new Superstructure(m_shooter, m_intake, m_index);
 
     // TODO remove me and use LL LED abstraction
     NetworkTableInstance.getDefault().getTable("limelight-front").getEntry("ledMode").setNumber(1);
@@ -169,6 +196,10 @@ public class Robot extends LoggedRobot {
             Millimeters.of(0),
             Rotation3d.kZero)); // we only care about 2d translation data
 
+    m_intake.setDefaultCommand(superstructure.intake());
+    m_shooter.setDefaultCommand(m_shooter.stop());
+    m_index.setDefaultCommand(m_index.stop());
+
     drive.setDefaultCommand(
         // Drivetrain will execute this command periodically
         drive.applyRequest(
@@ -180,21 +211,22 @@ public class Robot extends LoggedRobot {
                         driver.getRightX()
                             * MaxAngularRate) // Drive counterclockwise with negative X (left)
             ));
-    driver
-        .leftBumper()
-        .whileTrue(
-            drive.driverAssistance(
-                new Pose2d(2, 5.6, new Rotation2d()),
-                () -> -driver.getLeftY() * MaxSpeed,
-                () -> -driver.getLeftX() * MaxSpeed));
+    // driver
+    //     .leftBumper()
+    //     .whileTrue(
+    //         drive.driverAssistance(
+    //             new Pose2d(2, 5.6, new Rotation2d()),
+    //             () -> -driver.getLeftY() * MaxSpeed,
+    //             () -> -driver.getLeftX() * MaxSpeed));
+    driver.rightBumper().whileTrue(superstructure.shoot());
     driver.a().whileTrue(drive.brake());
     driver.y().onTrue(drive.seedFieldCentric());
-    driver
-        .x()
-        .whileTrue(
-            drive
-                .moveToPosition(new Pose2d(2, 5.6, new Rotation2d()))
-                .until(drive::isTeleopAtSetpoint));
+    // driver
+    //     .x()
+    //     .whileTrue(
+    //         drive
+    //             .moveToPosition(new Pose2d(2, 5.6, new Rotation2d()))
+    //             .until(drive::isTeleopAtSetpoint));
 
     // Run SysId routines when holding back/start and X/Y.
     // Note that each routine should be run exactly once in a single log.
